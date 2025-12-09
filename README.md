@@ -39,52 +39,24 @@ https://github.com/user-attachments/assets/a8aa2465-ccae-42ef-9a75-2a4b4cbe6a95
 - Docker Runtime — GPU-accelerated container for stable development on Jetson Orin Super.
 
 #### System Architecture
-Hardware Assumptions
-Component
-Function
-Jetson Orin Super
-Main brain (GPU inference + ROS2 runtime)
-USB Camera( Arduino U20CAM-1080P-1)
-Vision input for emotion detection
-Arduino Nano (CH340)
-Servo & LED control
-PCA9685 Servo Driver
-PWM for pan/tilt motors
-Speakers & USB Mic
-Voice I/O
-5 V Power Supply
-Drives servos
-Wi-Fi Dongle
-Cloud API connection
+##### Hardware Assumptions
+
+The system is designed around the following hardware components, each responsible for a distinct layer of perception, control, or interaction:
+| **Component**                           | **Primary Function**                                                                                          |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Jetson Orin Super**                   | Central compute unit for GPU-accelerated inference, ROS2 nodes, model loading, and real-time decision-making. |
+| **USB Camera (Arducam U20CAM-1080P-1)** | Visual sensor used for face tracking and personalized emotion-recognition data collection.                    |
+| **Arduino Nano (CH340)**                | Low-level actuator controller for servos, LEDs, and additional physical responses.                            |
+| **PCA9685 Servo Driver**                | Dedicated PWM generator used for pan/tilt motor control and smooth servo movement.                            |
+| **Speakers + USB Microphone**           | Bidirectional audio interface enabling speech synthesis and speech recognition.                               |
+| **5V Power Supply**                     | Stable power source for actuation hardware (servos and peripherals).                                          |
+| **Wi-Fi Dongle**                        | Provides network access for cloud-based LLM inference and remote logging.                                     |
 
 ![Components](ros2_ws/images/components1.jpg "Components")
 
-### Quick Start (Development on Jetson Orin)
-#### 1. Build image
-docker compose build
-
-#### 2. Start Cara runtime
-docker run -it --rm --runtime nvidia --network host \
-  -v $(pwd):/workspace/ros2_ws \
-  cara_ros_node
-
-#### 3. (Inside container)
-cd /workspace && python3 cara.py
-
-Before running, ensure /dev/ttyUSB0 (Arduino) exists.
- If not: sudo modprobe ch341 usbserial then replug the board.
-
-  **Environment Variables**
-Create a .env file in the project root:
-```.env
-    ELEVENLABS_API_KEY=<your-elevenlabs-key>
-    GEMINI_API_KEY=<your-gemini-key>
-    CARA_SERIAL_PORT=/dev/ttyUSB0
-    UID=1000
-    GID=1000
+**Repo Structure**
 ```
-
-    Repo Structure
+    R 
     cara/
     │── cara.py                        # Main runtime loop
     │── sentiment_detection.py          # Emotion inference (text)
@@ -108,18 +80,52 @@ Create a .env file in the project root:
 
 
 ```
+### Quick Start (Development on Jetson Orin)
+#### 1. Build image
+docker compose build
 
-#make sure you are in dialout group
-sudo usermod -a -G dialout $USER
-newgrp dialout
-/dev/ttyAMA0
+#### 2. Start Cara runtime
 ```
-How to see arduino on jetson:
+docker run -it --rm --runtime nvidia --network host \
+  -v $(pwd):/workspace/ros2_ws \
+  cara_ros_node
+```
+or simply
+```
+docker build cara_runtime
+docker compose up -d cara_runtime
+```
+#### 3. (Inside container)
+cd /workspace/ros2_ws && python3 cara.py
+
+Before running, ensure /dev/ttyUSB0 (Arduino) exists.
+ If not: sudo modprobe ch341 usbserial then replug the board.
+
+
+**Environment Variables**
+
+Create a .env file in the project root:
+```
+    ELEVENLABS_API_KEY=<your-elevenlabs-key>
+    GEMINI_API_KEY=<your-gemini-key>
+    CARA_SERIAL_PORT=/dev/ttyUSB0
+    UID=1000
+    GID=1000
+
+
+```
+**How to See Arduino on Jetson:**
 ```
 ls /dev/ttyUSB* /dev/ttyAMA0* 2>/dev/null
 arduino-cli monitor -p /dev/ttyAMA0
 ```
-'''
+Make sure you are in dialout group
+```
+sudo usermod -a -G dialout $USER
+newgrp dialout
+/dev/ttyAMA0
+```
+---
 ### Wiring 
 **battery**
  
@@ -170,8 +176,8 @@ arduino-cli monitor -p /dev/ttyAMA0
                       |     |
                 Servo 1   Servo 2
                 (S V G)   (S V G)
-
-### 1. VIT Emotion Detection: Abstract
+---
+### 1. VIT Emotion Detection 
 Standard facial emotion recognition models are trained on generic datasets (like FER-2013), often failing to capture the nuances of a specific user’s facial micro-expressions. Project Cara introduces a **Personalized Adaptive Vision System**. By utilizing a pre-trained Vision Transformer (ViT-Tiny) and implementing a lightweight, trainable adapter layer, the system performs real-time, on-device learning. This allows the robot to "learn" its owner's specific emotional cues via human-in-the-loop feedback, bridging the gap between raw perception and empathetic Human-Robot Interaction (HRI).
 
 ---
@@ -430,9 +436,9 @@ Training complete!
 
 ```
 
-##### Interpretation of Results
+**Interpretation of Results**
 
-**The consistent downward trend in training loss—from 1.26 -> 0.74—indicates that the model is successfully adjusting its internal weights to match your personal expression patterns.**
+##### The consistent downward trend in training loss—from 1.26 -> 0.74—indicates that the model is successfully adjusting its internal weights to match your personal expression patterns. 
 
 In practical terms:
 
