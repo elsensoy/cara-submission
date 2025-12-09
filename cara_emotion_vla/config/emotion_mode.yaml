@@ -1,0 +1,9 @@
+# Adjusted to match dima806/facial_emotions_image_detection id2label
+emotions:
+  - sad
+  - disgust
+  - angry
+  - neutral
+  - fear
+  - surprise
+  - happy
